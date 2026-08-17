@@ -1,0 +1,288 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="s1_right">
+  <material name="pla_cf_black">
+    <color rgba="0.08 0.083 0.09 1" />
+  </material>
+  <material name="base_graphite">
+    <color rgba="0.12 0.13 0.142 1" />
+  </material>
+  <material name="link1_cool_graphite">
+    <color rgba="0.17 0.19 0.215 1" />
+  </material>
+  <material name="link2_blue_graphite">
+    <color rgba="0.125 0.165 0.2 1" />
+  </material>
+  <material name="link3_warm_graphite">
+    <color rgba="0.2 0.17 0.125 1" />
+  </material>
+  <material name="link4_green_graphite">
+    <color rgba="0.145 0.19 0.13 1" />
+  </material>
+  <material name="link5_violet_graphite">
+    <color rgba="0.185 0.145 0.205 1" />
+  </material>
+  <material name="gripper_graphite">
+    <color rgba="0.15 0.155 0.17 1" />
+  </material>
+  <material name="finger_carrier_graphite">
+    <color rgba="0.12 0.13 0.145 1" />
+  </material>
+  <material name="motor_dark_gray">
+    <color rgba="0.285 0.29 0.305 1" />
+  </material>
+  <material name="black_oxide">
+    <color rgba="0.045 0.045 0.05 1" />
+  </material>
+  <material name="silver_metal">
+    <color rgba="0.83 0.83 0.815 1" />
+  </material>
+  <material name="camera_black">
+    <color rgba="0.07 0.075 0.085 1" />
+  </material>
+  <material name="rubber_black">
+    <color rgba="0.055 0.055 0.06 1" />
+  </material>
+  <material name="soft_finger_orange">
+    <color rgba="1 0.33 0.02 1" />
+  </material>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-7.46613316e-16 -5.4488925e-17 -0.00276303415" rpy="0 0 0" />
+      <mass value="1.29583519" />
+      <inertia ixx="0.0017107724" ixy="-1.80418018e-19" ixz="-7.35483974e-18" iyy="0.00274261726" iyz="-7.67794656e-19" izz="0.00340175483" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/base_link.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-2.74780199e-15 -2.22044605e-16 -0.01" rpy="0 0 0" />
+      <geometry>
+        <box size="0.22 0.12 0.0817" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="link1">
+    <inertial>
+      <origin xyz="0.00327466065 -3.54095634e-05 0.0909114977" rpy="0 0 0" />
+      <mass value="1.12836581" />
+      <inertia ixx="0.00195177555" ixy="9.87899467e-07" ixz="-1.26151138e-05" iyy="0.0013617154" iyz="-1.39972709e-06" izz="0.0013391883" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/link1.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="7.24420524e-15 6.10622664e-16 0.0841" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.12 0.1195" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="link2">
+    <inertial>
+      <origin xyz="0.0438748016 -2.88223248e-05 0.171998187" rpy="0 0 0" />
+      <mass value="0.914321365" />
+      <inertia ixx="0.00890792612" ixy="1.31110743e-07" ixz="0.000193746912" iyy="0.00872933125" iyz="-1.35111725e-06" izz="0.000568555708" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/link2.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.041475 1.11022302e-15 0.125" rpy="0 0 0" />
+      <geometry>
+        <box size="0.06075 0.08 0.33" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="link3">
+    <inertial>
+      <origin xyz="-0.0417290979 -0.156009659 3.38134269e-05" rpy="0 0 0" />
+      <mass value="0.839316672" />
+      <inertia ixx="0.00633206114" ixy="0.000145532134" ixz="2.13444502e-07" iyy="0.000531686993" iyz="-2.05633337e-06" izz="0.00618267806" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/link3.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.039875 -0.10985 4.98212582e-15" rpy="0 0 0" />
+      <geometry>
+        <box size="0.06075 0.2997 0.08" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="link4">
+    <inertial>
+      <origin xyz="0.0732396578 2.37324905e-07 0.0039188933" rpy="0 0 0" />
+      <mass value="0.368651315" />
+      <inertia ixx="0.000172235544" ixy="8.72272023e-11" ixz="-2.56704281e-06" iyy="0.000195507711" iyz="-1.62566292e-09" izz="0.000230267156" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/link4.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.06565 1.83186799e-15 0.0022" rpy="0 0 0" />
+      <geometry>
+        <box size="0.0852 0.066 0.0509" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="link5">
+    <inertial>
+      <origin xyz="2.37324897e-07 0.00400027101 -0.0681658426" rpy="0 0 0" />
+      <mass value="0.368651315" />
+      <inertia ixx="0.00019584039" ixy="-1.62729219e-09" ixz="4.23583008e-10" iyy="0.00023051686" iyz="3.83217167e-06" izz="0.000172318521" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/link5.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-8.03523914e-15 0.00225 -0.0604" rpy="0 0 0" />
+      <geometry>
+        <box size="0.066 0.051 0.0852" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_base_link">
+    <inertial>
+      <origin xyz="7.05002409e-05 -0.073624413 0.0133070668" rpy="0 0 0" />
+      <mass value="0.566289225" />
+      <inertia ixx="0.00105813362" ixy="-7.20294607e-07" ixz="-1.62884186e-07" iyy="0.00120353592" iyz="0.000112752829" izz="0.000702651412" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/gripper_base_link.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="2.22044605e-16 -0.069 0.044550084" rpy="0 0 0" />
+      <geometry>
+        <box size="0.166 0.092 0.164100168" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_finger_link">
+    <inertial>
+      <origin xyz="-0.0589163757 -0.138908274 0.000518355848" rpy="0 0 0" />
+      <mass value="0.0643791022" />
+      <inertia ixx="9.84052109e-05" ixy="-3.38980672e-07" ixz="-7.16458775e-07" iyy="1.38351336e-05" iyz="-1.05776011e-06" izz="9.81390236e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/left_finger_link.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.0349500659 -0.16755 5e-05" rpy="0 0 0" />
+      <geometry>
+        <box size="0.0826656621 0.1351 0.052" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_finger_link">
+    <inertial>
+      <origin xyz="0.0589163778 -0.138908274 -0.000168355851" rpy="0 0 0" />
+      <mass value="0.0643791022" />
+      <inertia ixx="9.84052109e-05" ixy="3.38980672e-07" ixz="-7.16458775e-07" iyy="1.38351336e-05" iyz="1.05776012e-06" izz="9.81390236e-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/visual/right_finger_link.obj" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.034950068 -0.16755 0.0003" rpy="0 0 0" />
+      <geometry>
+        <box size="0.0826656621 0.1351 0.052" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="camera_link" />
+  <joint name="camera_fixed" type="fixed">
+    <parent link="gripper_base_link" />
+    <child link="camera_link" />
+    <origin xyz="8.24998808e-05 -0.0904390307 0.0987713467" rpy="0 0 0" />
+  </joint>
+  <link name="tool0" />
+  <joint name="tool0_fixed" type="fixed">
+    <parent link="gripper_base_link" />
+    <child link="tool0" />
+    <origin xyz="-4.37776271e-05 -0.151981036 1.01722606e-05" rpy="0 0 0" />
+  </joint>
+  <joint name="base" type="revolute">
+    <parent link="base_link" />
+    <child link="link1" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-1.59" upper="1.57" effort="35" velocity="6.6" />
+  </joint>
+  <joint name="link1" type="revolute">
+    <parent link="link1" />
+    <child link="link2" />
+    <origin xyz="0.00385 7.77156117e-16 0.09485" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-1.98" upper="1.97" effort="35" velocity="6.6" />
+  </joint>
+  <joint name="link2" type="revolute">
+    <parent link="link2" />
+    <child link="link3" />
+    <origin xyz="0.0436 2.44249065e-15 0.25" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-1.18" upper="3.96" effort="8" velocity="5.5" />
+  </joint>
+  <joint name="link3" type="revolute">
+    <parent link="link3" />
+    <child link="link4" />
+    <origin xyz="-0.042 -0.2197 4.94049246e-15" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-2.12" upper="1.95" effort="8" velocity="5.5" />
+  </joint>
+  <joint name="link4" type="revolute">
+    <parent link="link4" />
+    <child link="link5" />
+    <origin xyz="0.07525 -6.66133815e-16 0.00465" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.65" upper="0.75" effort="4" velocity="10" />
+  </joint>
+  <joint name="link5" type="revolute">
+    <parent link="link5" />
+    <child link="gripper_base_link" />
+    <origin xyz="-7.46624984e-15 0.00475 -0.07" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.17" upper="3.08" effort="4" velocity="10" />
+  </joint>
+  <joint name="gripper" type="prismatic">
+    <parent link="gripper_base_link" />
+    <child link="left_finger_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-0.045" upper="0" effort="80" velocity="0.2" />
+  </joint>
+  <joint name="gripper_right_mimic" type="prismatic">
+    <parent link="gripper_base_link" />
+    <child link="right_finger_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.045" upper="0" effort="80" velocity="0.2" />
+    <mimic joint="gripper" multiplier="1" offset="0" />
+  </joint>
+</robot>

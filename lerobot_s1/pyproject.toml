@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# The distribution AND import name must start with "lerobot_robot_" so `lerobot-*` CLIs
+# auto-import it (LeRobot >= 0.4.3 imports the distribution name as a module).
+name = "lerobot_robot_s1"
+version = "0.1.0"
+description = "LeRobot plugin for the Structis S1 kit: S1A follower arm and S1L leader arm"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "Structis" }]
+keywords = ["lerobot", "robotics", "structis", "s1", "damiao", "dynamixel"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # Developed against LeRobot 0.4.3 (the version pinned by the Structis stack); the Robot /
+    # Teleoperator / MotorsBus APIs used here are unchanged through 0.6.x.
+    "lerobot[dynamixel]>=0.4.3,<0.7",
+    "python-can>=4.2,<5",
+]
+
+[project.optional-dependencies]
+# CANable / candleLight adapters on macOS and Windows (python-can "gs_usb" interface).
+usb = ["python-can[gs_usb]>=4.2,<5"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/StructisAI/S1"
+Issues = "https://github.com/StructisAI/S1/issues"
+
+[tool.setuptools.packages.find]
+include = ["lerobot_robot_s1*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

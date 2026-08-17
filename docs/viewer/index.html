@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Structis S1 · URDF viewer</title>
+<meta name="description" content="Interactive URDF viewer for the Structis S1A arm. Drag the joints, or use the sliders." />
+<style>
+  :root { --bg:#fff; --bg2:#f5f5f3; --ink:#0b0b0b; --ink2:#5f5f5c; --ink3:#787874; --line:#e4e4e0; --line2:#cdcdc8; --acc:#00803c; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .mono { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; letter-spacing:.06em; }
+  #app { display:grid; grid-template-columns:1fr 300px; height:100%; }
+  #stage { position:relative; border-right:1px solid var(--line); }
+  canvas { display:block; }
+  #bar { position:absolute; left:0; right:0; top:0; display:flex; gap:18px; align-items:center; padding:12px 16px; font-size:11px; text-transform:uppercase; border-bottom:1px solid var(--line); background:rgba(255,255,255,.85); backdrop-filter:blur(4px); }
+  #bar .n { color:var(--acc); } #bar .name { font-weight:600; } #bar .meta { color:var(--ink3); }
+  #bar .kit { margin-left:auto; margin-right:18px; color:var(--ink2); text-decoration:none; border-bottom:1px solid var(--line2); } #bar .kit:hover { color:var(--acc); border-color:var(--acc); }
+  body.embed #panel { display:none; } body.embed #app { grid-template-columns:1fr; } body.embed #stage { border-right:0; }
+  #hint { position:absolute; left:16px; bottom:14px; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink3); }
+  #panel { padding:56px 20px 20px; overflow:auto; }
+  #panel h1 { font-size:20px; letter-spacing:-.02em; margin:0 0 4px; }
+  #panel p.sub { margin:0 0 18px; color:var(--ink2); font-size:13px; line-height:1.5; }
+  .seg { display:inline-flex; border:1px solid var(--line2); margin-bottom:18px; }
+  .seg button { font:inherit; font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:8px 12px; border:0; background:transparent; color:var(--ink2); cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+  .j { border-top:1px solid var(--line); padding:10px 0 8px; }
+  .j:last-child { border-bottom:1px solid var(--line); }
+  .j label { display:flex; justify-content:space-between; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink3); margin-bottom:6px; }
+  .j label b { font-weight:500; color:var(--ink); }
+  .j input[type=range] { width:100%; accent-color:var(--acc); margin:0; }
+  .actions { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .btn { font:inherit; font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:10px 14px; border:1px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer; text-decoration:none; }
+  .btn:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+  .foot { margin-top:22px; font-size:11px; color:var(--ink3); line-height:1.6; }
+  .foot a { color:var(--ink2); }
+  #err { position:absolute; inset:0; display:none; place-items:center; padding:24px; text-align:center; font-size:13px; color:var(--ink2); }
+  @media (max-width:800px) { #app { grid-template-columns:1fr; grid-template-rows:60vh 1fr; } #stage { border-right:0; border-bottom:1px solid var(--line); } #panel { padding-top:20px; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+  "three/examples/jsm/": "https://unpkg.com/three@0.165.0/examples/jsm/",
+  "urdf-loader": "https://unpkg.com/urdf-loader@0.13.1/src/URDFLoader.js",
+  "urdf-loader/drag": "https://unpkg.com/urdf-loader@0.13.1/src/URDFDragControls.js"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="bar" class="mono"><span class="n">FIG. S1</span><span class="name" id="robotName">S1A</span><span id="cfg"></span><a class="kit" href="https://structis.ai/hardware.html" target="_top">S1 KIT →</a><span class="meta" id="meta">LOADING…</span></div>
+    <div id="hint" class="mono">Drag anywhere on the arm — the chain follows · Shift-drag: single joint · right-drag / wheel to orbit · double-click resets</div>
+    <div id="err" class="mono"></div>
+  </div>
+  <aside id="panel">
+    <h1>Structis S1A</h1>
+    <p class="sub">Kinematics from <code>s1_description</code>. Same joint order and limits as the LeRobot plugin. Meshes are simulation-grade.</p>
+    <div class="seg" role="group" aria-label="Arm">
+      <button id="btnRight" aria-pressed="true">Right</button>
+      <button id="btnLeft" aria-pressed="false">Left</button>
+    </div>
+    <div id="joints"></div>
+    <div class="actions">
+      <button class="btn" id="btnZero">Zero</button>
+      <button class="btn" id="btnHome">Home pose</button>
+      <button class="btn" id="btnAnim">Sweep</button>
+      <a class="btn" id="btnUrdf" href="#" download>URDF</a>
+    </div>
+    <p class="foot">Values in radians (gripper in metres, 0 = open). Limits from the URDF; the sliders stop where the arm does.<br />
+      <a href="https://github.com/StructisAI/S1">github.com/StructisAI/S1</a> · <a href="https://structis.ai/hardware.html">structis.ai/hardware</a></p>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import URDFLoader from 'urdf-loader';
+import { PointerURDFDragControls } from 'urdf-loader/drag';
+
+/* ---------- where the URDF lives ----------
+   Local / repo checkout: ../../s1_description/…  (works from GitHub Pages too if Pages serves the repo root)
+   GitHub Pages from /docs: fall back to raw.githubusercontent.com */
+const CANDIDATES = (arm) => [
+  `../../s1_description/urdf/s1_${arm}.urdf`,
+  `https://raw.githubusercontent.com/StructisAI/S1/main/s1_description/urdf/s1_${arm}.urdf`,
+];
+// natural, self-collision-free sweep ranges (mid ± amp)
+const SWEEP = { base: { mid: 0, amp: 0.7 }, link1: { mid: 0.1, amp: 0.45 }, link2: { mid: 0.35, amp: 0.55 },
+                link3: { mid: -0.3, amp: 0.7 }, link4: { mid: 0.05, amp: 0.4 }, link5: { mid: 0, amp: 1.2 },
+                gripper: { mid: -0.0225, amp: 0.0225 } };
+const HOME = { base: 0, link1: 0, link2: 0.3, link3: -0.3, link4: 0, link5: 0, gripper: -0.02 };
+const params = new URLSearchParams(location.search);
+if (params.has('embed')) document.body.classList.add('embed');
+const _sheetN = parseInt(params.get('sheet') || '0', 10);
+let needsRender = true, settle = 0;
+const invalidate = () => { needsRender = true; };
+
+/* ---------- three ---------- */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0xffffff, 1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+// image-based lighting: neutral studio room, no HDR download needed
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 50);
+camera.position.set(1.05, -0.95, 0.62);
+camera.up.set(0, 0, 1);                       // URDF is Z-up
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, -0.12, 0.3);
+{ const c = (new URLSearchParams(location.search).get('cam') || '').split(',').map(Number); if (c.length === 3 && c.every(Number.isFinite)) camera.position.set(c[0], c[1], c[2]); }
+controls.enableDamping = true; controls.dampingFactor = 0.12;
+controls.addEventListener('change', invalidate);
+controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+controls.touches = { ONE: null, TWO: THREE.TOUCH.DOLLY_ROTATE };
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xdadad6, 0.12));
+// three-point studio rig so metals and edges read even where the environment is weak
+const fill = new THREE.DirectionalLight(0xffffff, 0.25); fill.position.set(-2.0, -1.5, 1.2); scene.add(fill);
+const rim  = new THREE.DirectionalLight(0xffffff, 0.45);  rim.position.set(-0.5, 2.5, 1.8);  scene.add(rim);
+const key = new THREE.DirectionalLight(0xffffff, 0.9);
+key.position.set(1.5, -1.0, 2.5); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.camera.near = 0.5; key.shadow.camera.far = 6;
+key.shadow.camera.left = key.shadow.camera.bottom = -1; key.shadow.camera.right = key.shadow.camera.top = 1;
+key.shadow.bias = -0.0005;
+scene.add(key);
+
+// drawing-sheet ground: hairline grid + soft shadow plane
+const grid = new THREE.GridHelper(2, 20, 0xcdcdc8, 0xededea);
+grid.rotation.x = Math.PI / 2; grid.position.z = -0.001; grid.raycast = () => {}; scene.add(grid);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.ShadowMaterial({ opacity: 0.12 }));
+ground.receiveShadow = true; ground.raycast = () => {}; scene.add(ground);
+
+/* ---------- URDF ---------- */
+const loader = new URDFLoader();
+const _defaultMeshCb = loader.loadMeshCb;
+const draco = new DRACOLoader().setDecoderPath('./draco/');
+const gltf = new GLTFLoader().setDRACOLoader(draco);
+let meshesTotal = 0, meshesDone = 0;
+const progress = () => { metaEl.textContent = meshesDone < meshesTotal ? `LOADING ${meshesDone}/${meshesTotal}` : metaText; };
+let metaText = '';
+function prepGeometry(mesh) {
+  if (params.has('raw')) return;
+  let g = mesh.geometry;
+  if (!g.index) g = BufferGeometryUtils.mergeVertices(g, 1e-6);
+  g.deleteAttribute('normal');
+  g = BufferGeometryUtils.toCreasedNormals(g, THREE.MathUtils.degToRad(30));
+  mesh.geometry = g;
+  if (mesh.material) { mesh.material.flatShading = false; mesh.material.needsUpdate = true; }
+}
+function styleMesh(o, rebuildNormals = false) {
+  o.castShadow = true; o.receiveShadow = true;
+  const m = o.material;
+  if (m && m.isMeshStandardMaterial) {
+    m.envMapIntensity = 1.0; if (params.has('ds')) m.side = THREE.DoubleSide;
+    if (/clear|transparent/i.test(m.name || '')) { m.transparent = true; m.opacity = 0.42; m.roughness = 0.15; m.metalness = 0; m.depthWrite = false; m.side = THREE.DoubleSide; }
+    m.needsUpdate = true;
+  }
+  if (rebuildNormals || !o.geometry.attributes.normal) prepGeometry(o);
+}
+loader.loadMeshCb = (path, manager, urdfMaterial, done) => {
+  let glbPath = path.replace(/\.(obj|stl|dae)$/i, '.glb');
+  if (params.get('meshbase')) glbPath = params.get('meshbase') + glbPath.split('/').pop();   // capture/debug: uncompressed copies
+  meshesTotal++; progress();
+  const watchdog = setTimeout(() => { if (meshesDone < meshesTotal) { errEl.textContent = 'Meshes are taking long to decode. If this persists: your browser may block WebAssembly (Draco decoder) — try another browser, or open an issue at github.com/StructisAI/S1.'; errEl.style.display = 'grid'; } }, 20000);
+  gltf.load(glbPath, (res) => {
+    clearTimeout(watchdog); errEl.style.display = 'none';
+    const root = res.scene; root.traverse((o) => { if (o.isMesh) styleMesh(o); });
+    done(root); meshesDone++; progress(); invalidate(); settle = 6;
+    if (_sheetN > 0 && meshesDone === meshesTotal) setTimeout(() => contactSheet(_sheetN), 400);
+  }, undefined, () => {
+    // no GLB → fall back to the loader's default (STL/DAE) with our flat material
+    _defaultMeshCb.call(loader, path, manager, urdfMaterial, (obj, err) => {
+      if (obj) obj.traverse((o) => { if (o.isMesh) { o.material = /finger/.test(path) ? fingerMaterial : material; styleMesh(o, true); } });
+      done(obj, err);
+    });
+  });
+};
+const material = new THREE.MeshStandardMaterial({ color: 0x151517, roughness: 0.62, metalness: 0.08 });
+const fingerMaterial = new THREE.MeshStandardMaterial({ color: 0xff5405, roughness: 0.7, metalness: 0.0 });
+
+let robot = null, drag = null, sweeping = false;
+const jointsEl = document.getElementById('joints');
+const cfgEl = document.getElementById('cfg');
+const metaEl = document.getElementById('meta');
+const errEl = document.getElementById('err');
+
+async function fetchFirst(urls) {
+  for (const u of urls) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) return u; } catch (e) {} }
+  throw new Error('URDF not found: ' + urls.join(' | '));
+}
+
+async function loadArm(arm) {
+  metaEl.textContent = 'LOADING…'; errEl.style.display = 'none'; meshesTotal = 0; meshesDone = 0;
+  if (robot) { scene.remove(robot); robot = null; }
+  if (drag) { drag.dispose(); drag = null; }
+  let url;
+  try { url = await fetchFirst(CANDIDATES(arm)); }
+  catch (e) { errEl.textContent = e.message; errEl.style.display = 'grid'; metaEl.textContent = 'NO URDF'; return; }
+  document.getElementById('btnUrdf').href = url;
+
+  await new Promise((resolve, reject) => {
+    loader.load(url, (r) => { robot = r; resolve(); }, undefined, reject);
+  });
+  scene.add(robot);
+  document.getElementById('robotName').textContent = robot.robotName || `S1A ${arm}`;
+  metaText = `${Object.keys(robot.joints).filter(j => robot.joints[j].jointType !== 'fixed').length} JOINTS · ${arm.toUpperCase()}`; progress();
+  buildSliders();
+  applyPose(readPoseFromURL() || HOME);
+  drag = new PointerURDFDragControls(scene, camera, renderer.domElement);
+  drag.onDragStart = () => { controls.enabled = false; sweeping = false; };
+  drag.onDragEnd = () => { controls.enabled = true; };
+  drag.updateJoint = (joint, angle) => { joint.setJointValue(angle); syncSliders(); invalidate(); };
+  drag.onHover = (j) => { renderer.domElement.style.cursor = 'grab'; };
+  drag.onUnhover = () => { renderer.domElement.style.cursor = ''; };
+  installIKDrag();
+}
+
+function actuatedJoints() {
+  return Object.values(robot.joints).filter(j => j.jointType !== 'fixed' && !j.mimicJoint);
+}
+function buildSliders() {
+  jointsEl.innerHTML = '';
+  for (const j of actuatedJoints()) {
+    const lo = j.limit.lower, hi = j.limit.upper, unit = j.jointType === 'prismatic' ? 'm' : 'rad';
+    const row = document.createElement('div'); row.className = 'j';
+    row.innerHTML = `<label class="mono"><span>${j.name}</span><b data-v>${(+j.angle).toFixed(3)} ${unit}</b></label>
+      <input type="range" min="${lo}" max="${hi}" step="0.001" value="${j.angle}" data-j="${j.name}" aria-label="${j.name}">`;
+    row.querySelector('input').addEventListener('input', (e) => { sweeping = false; j.setJointValue(+e.target.value); syncSliders(); invalidate(); });
+    jointsEl.appendChild(row);
+  }
+}
+function syncSliders() {
+  for (const inp of jointsEl.querySelectorAll('input')) {
+    const j = robot.joints[inp.dataset.j]; inp.value = j.angle;
+    inp.parentElement.querySelector('[data-v]').textContent = `${(+j.angle).toFixed(3)} ${j.jointType === 'prismatic' ? 'm' : 'rad'}`;
+  }
+  cfgEl.textContent = actuatedJoints().map(j => (+j.angle).toFixed(2)).join(' ');
+}
+function applyPose(p) { for (const j of actuatedJoints()) if (p[j.name] !== undefined) j.setJointValue(p[j.name]); syncSliders(); invalidate(); }
+function readPoseFromURL() {
+  const q = params.get('q'); if (!q) return null;
+  const v = q.split(',').map(Number); const p = {}; actuatedJoints().forEach((j, i) => { if (!isNaN(v[i])) p[j.name] = v[i]; }); return p;
+}
+
+/* ---------- IK drag: grab any link, solve the base→link chain so the grabbed point follows the cursor ----------
+   Cyclic-coordinate-descent on the revolute joints of the chain, joint limits respected, prismatic (gripper) skipped.
+   Shift held → fall through to the single-joint PointerURDFDragControls. */
+let ikInstalled = false;
+function installIKDrag() {
+  if (ikInstalled) return; ikInstalled = true;
+  const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+  const plane = new THREE.Plane(); const target = new THREE.Vector3();
+  const grabLocal = new THREE.Vector3(); const grabWorld = new THREE.Vector3();
+  const pivot = new THREE.Vector3(); const axis = new THREE.Vector3(); const u = new THREE.Vector3(); const v = new THREE.Vector3();
+  const q = new THREE.Quaternion(); const tmp = new THREE.Vector3();
+  let chain = null, grabLink = null, active = false;
+  const el = renderer.domElement;
+  const toNDC = (e) => { const r = el.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); };
+  const chainTo = (obj) => { const js = []; let o = obj; while (o) { if (o.isURDFJoint && o.jointType !== 'fixed' && !o.mimicJoint) js.unshift(o); o = o.parent; } return js; };
+  const linkOf = (obj) => { let o = obj; while (o && !o.isURDFLink) o = o.parent; return o; };
+  // the single-joint controller listens to mousedown and has no enable gate: let it see the click only with Shift
+  el.addEventListener('mousedown', (e) => { if (e.button === 0 && !e.shiftKey) e.stopImmediatePropagation(); }, true);
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.shiftKey || !robot) return;
+    toNDC(e); const hits = ray.intersectObject(robot, true); if (!hits.length) return;
+    grabLink = linkOf(hits[0].object); if (!grabLink) return;
+    chain = chainTo(grabLink); if (!chain.length) return;
+    grabWorld.copy(hits[0].point); grabLink.worldToLocal(grabLocal.copy(grabWorld));
+    camera.getWorldDirection(tmp); plane.setFromNormalAndCoplanarPoint(tmp, grabWorld);
+    active = true; drag.enabled = false; controls.enabled = false; sweeping = false; el.style.cursor = 'grabbing';
+    el.setPointerCapture(e.pointerId); e.preventDefault(); e.stopImmediatePropagation();
+  }, true);
+  el.addEventListener('pointermove', (e) => {
+    if (!active) return;
+    toNDC(e); if (!ray.ray.intersectPlane(plane, target)) return;
+    // Damped least squares on the grabbed point (3-DoF position target), joints of the chain only.
+    // Wrist joints are weighted "expensive" so pulling the gripper moves shoulder/elbow, not the wrist.
+    const WEIGHT = { base: 1, link1: 1, link2: 1, link3: 1.4, link4: 6, link5: 8 };
+    const rev = chain.filter(j => j.jointType === 'revolute' || j.jointType === 'continuous');
+    const n = rev.length; if (!n) return;
+    const piv = rev.map(() => new THREE.Vector3()), ax = rev.map(() => new THREE.Vector3());
+    for (let it = 0; it < 4; it++) {
+      robot.updateMatrixWorld(true);
+      grabLink.localToWorld(grabWorld.copy(grabLocal));
+      const dp = tmp.subVectors(target, grabWorld); const dl = dp.length(); if (dl < 1e-4) break;
+      if (dl > 0.06) dp.multiplyScalar(0.06 / dl);                          // step limit per iteration (m)
+      // Jacobian columns: axis × (p − pivot), scaled by 1/weight (W⁻¹Jᵀ)
+      const J = rev.map((j, i) => {
+        piv[i].setFromMatrixPosition(j.matrixWorld);
+        ax[i].copy(j.axis).transformDirection(j.matrixWorld).normalize();
+        return new THREE.Vector3().subVectors(grabWorld, piv[i]).cross(ax[i]).multiplyScalar(-1); // axis × r
+      });
+      const w = rev.map(j => 1 / (WEIGHT[j.name] || 1));
+      // A = J W⁻¹ Jᵀ + λ² I  (3×3)
+      const lam2 = 0.03 * 0.03; const A = [[lam2,0,0],[0,lam2,0],[0,0,lam2]];
+      for (let i = 0; i < n; i++) { const c = J[i], wi = w[i];
+        A[0][0] += wi*c.x*c.x; A[0][1] += wi*c.x*c.y; A[0][2] += wi*c.x*c.z;
+        A[1][1] += wi*c.y*c.y; A[1][2] += wi*c.y*c.z; A[2][2] += wi*c.z*c.z; }
+      A[1][0] = A[0][1]; A[2][0] = A[0][2]; A[2][1] = A[1][2];
+      const M = new THREE.Matrix3().set(A[0][0],A[0][1],A[0][2],A[1][0],A[1][1],A[1][2],A[2][0],A[2][1],A[2][2]).invert();
+      const y = dp.clone().applyMatrix3(M);                                 // y = A⁻¹ Δp
+      for (let i = 0; i < n; i++) {
+        const j = rev[i]; let d = w[i] * J[i].dot(y);                       // Δθ_i = w_i J_iᵀ y
+        d = Math.max(-0.25, Math.min(0.25, d));
+        const lo = j.limit.lower, hi = j.limit.upper; let val = j.angle + d;
+        if (hi > lo) val = Math.min(hi, Math.max(lo, val));
+        j.setJointValue(val);
+      }
+    }
+    robot.updateMatrixWorld(true); syncSliders(); invalidate();
+  });
+  const end = (e) => { if (!active) return; active = false; drag.enabled = true; controls.enabled = true; el.style.cursor = ''; try { el.releasePointerCapture(e.pointerId); } catch (_) {} };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+
+/* ---------- UI ---------- */
+document.getElementById('btnZero').onclick = () => { sweeping = false; applyPose(Object.fromEntries(actuatedJoints().map(j => [j.name, 0]))); };
+document.getElementById('btnHome').onclick = () => { sweeping = false; applyPose(HOME); };
+document.getElementById('btnAnim').onclick = () => { sweeping = !sweeping; invalidate(); };
+document.getElementById('btnRight').onclick = () => setArm('right');
+document.getElementById('btnLeft').onclick = () => setArm('left');
+function setArm(arm) {
+  document.getElementById('btnRight').setAttribute('aria-pressed', arm === 'right');
+  document.getElementById('btnLeft').setAttribute('aria-pressed', arm === 'left');
+  loadArm(arm);
+}
+renderer.domElement.addEventListener('dblclick', () => { camera.position.set(1.05, -0.95, 0.62); controls.target.set(0, -0.12, 0.3); invalidate(); });
+
+/* ---------- loop ---------- */
+let t0 = performance.now();
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', () => { resize(); invalidate(); }); resize();
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (robot && (sweeping || params.has('sweep'))) {
+    const t = (now - t0) / 1000;
+    const js = actuatedJoints();
+    js.forEach((j, i) => {
+      const c = SWEEP[j.name] || { mid: 0, amp: 0.3 };
+      j.setJointValue(c.mid + c.amp * Math.sin(t * (0.5 + 0.13 * i) + i));
+    });
+    syncSliders();
+  }
+  const moved = controls.update();
+  if (moved || needsRender || sweeping || settle > 0 || params.has('sweep')) {
+    renderer.render(scene, camera); needsRender = false; if (settle > 0) settle--;
+  }
+}
+requestAnimationFrame(tick);
+
+/* ---------- ?sheet=N: contact sheet of a sweep (used to build the README GIF) ---------- */
+async function contactSheet(n) {
+  const cols = 4, rows = Math.ceil(n / cols), cw = 350, ch = 300;
+  const sheet = document.createElement('canvas'); sheet.width = cols * cw; sheet.height = rows * ch;
+  const ctx = sheet.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sheet.width, sheet.height);
+  renderer.setSize(cw, ch, false); camera.aspect = cw / ch; camera.updateProjectionMatrix();
+  camera.position.set(1.05, -0.95, 0.62); controls.target.set(0, -0.12, 0.3); controls.update();
+  const js = actuatedJoints();
+  for (let k = 0; k < n; k++) {
+    const t = (k / n) * 2 * Math.PI;
+    js.forEach((j, i) => {
+      const c = SWEEP[j.name] || { mid: 0, amp: 0.3 };
+      j.setJointValue(c.mid + c.amp * Math.sin(t * (1 + (i % 2)) + i * 0.9));
+    });
+    renderer.render(scene, camera);
+    ctx.drawImage(renderer.domElement, (k % cols) * cw, Math.floor(k / cols) * ch, cw, ch);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  document.body.innerHTML = ''; document.body.style.margin = '0'; document.body.appendChild(sheet);
+  sheet.id = 'sheet'; sheet.dataset.done = '1';
+}
+
+loadArm(params.get('arm') === 'left' ? 'left' : 'right');
+if (params.get('arm') === 'left') setArm('left');
+</script>
+</body>
+</html>
