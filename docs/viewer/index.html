@@ -39,10 +39,10 @@
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
-  "three/examples/jsm/": "https://unpkg.com/three@0.165.0/examples/jsm/",
-  "urdf-loader": "https://unpkg.com/urdf-loader@0.13.1/src/URDFLoader.js",
-  "urdf-loader/drag": "https://unpkg.com/urdf-loader@0.13.1/src/URDFDragControls.js"
+  "three": "./vendor/three/three.module.js",
+  "three/examples/jsm/": "./vendor/three/examples/jsm/",
+  "urdf-loader": "./vendor/urdf-loader/URDFLoader.js",
+  "urdf-loader/drag": "./vendor/urdf-loader/URDFDragControls.js"
 } }
 </script>
 </head>
@@ -68,7 +68,7 @@
       <a class="btn" id="btnUrdf" href="#" download>URDF</a>
     </div>
     <p class="foot">Values in radians (gripper in metres, 0 = open). Limits from the URDF; the sliders stop where the arm does.<br />
-      <a href="https://github.com/StructisAI/S1">github.com/StructisAI/S1</a> · <a href="https://structis.ai/hardware.html">structis.ai/hardware</a></p>
+      <a href="https://github.com/StructisAI/S1">github.com/StructisAI/S1</a> · <a href="https://structis.ai/hardware.html">structis.ai/hardware</a> · <a href="https://structis.ai/imprint.html">Imprint</a> · <a href="https://structis.ai/privacy.html">Privacy</a></p>
   </aside>
 </div>
 
@@ -221,7 +221,7 @@ async function loadArm(arm) {
   });
   scene.add(robot);
   document.getElementById('robotName').textContent = robot.robotName || `S1A ${arm}`;
-  metaText = `${Object.keys(robot.joints).filter(j => robot.joints[j].jointType !== 'fixed').length} JOINTS · ${arm.toUpperCase()}`; progress();
+  metaText = `${actuatedJoints().length} JOINTS · ${arm.toUpperCase()}`; progress(); // 6 revolute + gripper; the mimic finger joint is not counted
   buildSliders();
   applyPose(readPoseFromURL() || HOME);
   drag = new PointerURDFDragControls(scene, camera, renderer.domElement);
