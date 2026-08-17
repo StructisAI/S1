@@ -86,8 +86,9 @@ import { PointerURDFDragControls } from 'urdf-loader/drag';
    Local / repo checkout: ../../s1_description/…  (works from GitHub Pages too if Pages serves the repo root)
    GitHub Pages from /docs: fall back to raw.githubusercontent.com */
 const CANDIDATES = (arm) => [
-  `../../s1_description/urdf/s1_${arm}.urdf`,
-  `https://raw.githubusercontent.com/StructisAI/S1/main/s1_description/urdf/s1_${arm}.urdf`,
+  `../s1/urdf/s1_${arm}.urdf`,                       // structis.ai/s1/ and GitHub Pages (docs/s1/)
+  `../../s1_description/urdf/s1_${arm}.urdf`,        // repo checkout served from its root
+  `https://cdn.jsdelivr.net/gh/StructisAI/S1@main/s1_description/urdf/s1_${arm}.urdf`,
 ];
 // natural, self-collision-free sweep ranges (mid ± amp)
 const SWEEP = { base: { mid: 0, amp: 0.7 }, link1: { mid: 0.1, amp: 0.45 }, link2: { mid: 0.35, amp: 0.55 },
