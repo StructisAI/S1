@@ -57,8 +57,8 @@
     <h1>Structis S1A</h1>
     <p class="sub">Kinematics from <code>s1_description</code>. Same joint order and limits as the LeRobot plugin. Meshes are simulation-grade.</p>
     <div class="seg" role="group" aria-label="Arm">
-      <button id="btnRight" aria-pressed="true">Right</button>
-      <button id="btnLeft" aria-pressed="false">Left</button>
+      <button id="btnLeft" aria-pressed="true">Left</button>
+      <button id="btnRight" aria-pressed="false">Right</button>
     </div>
     <div id="joints"></div>
     <div class="actions">
@@ -340,7 +340,8 @@ function fitCamera() {
   const radius = 0.5 * Math.max(size.x, size.y, size.z) * 1.15;
   const vfov = THREE.MathUtils.degToRad(camera.fov), hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
   const dist = radius / Math.sin(Math.min(vfov, hfov) / 2);
-  const dir = new THREE.Vector3(1.05, -0.95, 0.55).normalize();
+  const left = (robot.robotName || '').includes('left');
+  const dir = new THREE.Vector3(1.05, left ? 0.95 : -0.95, 0.55).normalize();
   controls.target.copy(c); camera.position.copy(c).addScaledVector(dir, dist); controls.update(); invalidate();
 }
 
@@ -422,8 +423,7 @@ async function contactSheet(n) {
   sheet.id = 'sheet'; sheet.dataset.done = '1';
 }
 
-loadArm(params.get('arm') === 'left' ? 'left' : 'right');
-if (params.get('arm') === 'left') setArm('left');
+setArm(params.get('arm') === 'right' ? 'right' : 'left');
 </script>
 </body>
 </html>
