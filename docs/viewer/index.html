@@ -94,7 +94,7 @@ const CANDIDATES = (arm) => [
 const SWEEP = { base: { mid: 0, amp: 0.7 }, link1: { mid: 0.1, amp: 0.45 }, link2: { mid: 0.35, amp: 0.55 },
                 link3: { mid: -0.3, amp: 0.7 }, link4: { mid: 0.05, amp: 0.4 }, link5: { mid: 0, amp: 1.2 },
                 gripper: { mid: -0.0225, amp: 0.0225 } };
-const HOME = { base: 0, link1: 0, link2: 0.3, link3: -0.3, link4: 0, link5: 0, gripper: -0.02 };
+const HOME = { base: 0, link1: -0.87, link2: 0.84, link3: 0.70, link4: 0, link5: 0, gripper: -0.02 };   // set on the left arm
 const params = new URLSearchParams(location.search);
 if (params.has('embed')) document.body.classList.add('embed');
 const _sheetN = parseInt(params.get('sheet') || '0', 10);
@@ -386,7 +386,7 @@ requestAnimationFrame(tick);
 /* ---------- ?sheet=N: contact sheet of a sweep (used to build the README GIF) ---------- */
 // keyframed demo motion (used for the README GIF): eased reach → lift → side → home, camera orbits slowly
 const KEYS = [
-  { base: 0.00, link1: 0.00, link2: 0.30, link3: -0.30, link4: 0.00, link5: 0.00, gripper: -0.010 },
+  { base: 0.00, link1: -0.87, link2: 0.84, link3: 0.70, link4: 0.00, link5: 0.00, gripper: -0.010 },
   { base: 0.30, link1: 0.45, link2: 0.55, link3: -0.50, link4: 0.10, link5: 0.35, gripper: -0.040 },
   { base: -0.40, link1: -0.30, link2: -0.45, link3: 0.40, link4: -0.15, link5: -0.50, gripper: -0.005 },
   { base: -0.90, link1: 0.20, link2: 0.30, link3: -0.20, link4: 0.20, link5: 0.80, gripper: -0.030 },
