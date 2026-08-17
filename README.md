@@ -59,7 +59,7 @@ importer), PyBullet, Isaac, yourdfpy, trimesh — and in the browser:
 
 ## Status
 
-Batch 01 hardware ships with this software. Kinematics are CAD-derived and
+**Beta.** The plugin is tested against mocked hardware; verification on the first Batch 01 arms is in progress (see `docs/VERIFY_ON_HARDWARE.md`). Batch 01 hardware ships with this software. Kinematics are CAD-derived and
 validated against recorded teleop episodes; inertials are CAD estimates.
 Issues and questions: open an issue or roberto@structis.ai.
 
