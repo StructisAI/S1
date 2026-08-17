@@ -368,19 +368,37 @@ function tick(now) {
 requestAnimationFrame(tick);
 
 /* ---------- ?sheet=N: contact sheet of a sweep (used to build the README GIF) ---------- */
+// keyframed demo motion (used for the README GIF): eased reach → lift → side → home, camera orbits slowly
+const KEYS = [
+  { base: 0.00, link1: 0.00, link2: 0.30, link3: -0.30, link4: 0.00, link5: 0.00, gripper: -0.010 },
+  { base: 0.30, link1: 0.45, link2: 0.55, link3: -0.50, link4: 0.10, link5: 0.35, gripper: -0.040 },
+  { base: -0.40, link1: -0.30, link2: -0.45, link3: 0.40, link4: -0.15, link5: -0.50, gripper: -0.005 },
+  { base: -0.90, link1: 0.20, link2: 0.30, link3: -0.20, link4: 0.20, link5: 0.80, gripper: -0.030 },
+];
+const ease = (x) => x * x * (3 - 2 * x);
+function motionPose(t) {                     // t in [0,1), loops back to the first key
+  const segs = KEYS.length, f = t * segs, i = Math.floor(f) % segs, a = KEYS[i], b = KEYS[(i + 1) % segs], u = ease(f - Math.floor(f));
+  const p = {}; for (const k in a) p[k] = a[k] + (b[k] - a[k]) * u; return p;
+}
 async function contactSheet(n) {
-  const cols = 4, rows = Math.ceil(n / cols), cw = 350, ch = 300;
+  const motion = params.has('motion');
+  const cols = motion ? 6 : 4, rows = Math.ceil(n / cols), cw = motion ? 420 : 350, ch = motion ? 340 : 300;
   const sheet = document.createElement('canvas'); sheet.width = cols * cw; sheet.height = rows * ch;
   const ctx = sheet.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sheet.width, sheet.height);
   renderer.setSize(cw, ch, false); camera.aspect = cw / ch; camera.updateProjectionMatrix();
   camera.position.set(1.05, -0.95, 0.62); controls.target.set(0, -0.12, 0.3); controls.update();
   const js = actuatedJoints();
   for (let k = 0; k < n; k++) {
-    const t = (k / n) * 2 * Math.PI;
-    js.forEach((j, i) => {
-      const c = SWEEP[j.name] || { mid: 0, amp: 0.3 };
-      j.setJointValue(c.mid + c.amp * Math.sin(t * (1 + (i % 2)) + i * 0.9));
-    });
+    if (motion) {
+      const p = motionPose(k / n); js.forEach((j) => { if (p[j.name] !== undefined) j.setJointValue(p[j.name]); });
+      camera.position.set(1.25, -1.05, 0.62); controls.target.set(0.02, -0.12, 0.28); controls.update();   // fixed ¾ view, arm stays in frame
+    } else {
+      const t = (k / n) * 2 * Math.PI;
+      js.forEach((j, i) => {
+        const c = SWEEP[j.name] || { mid: 0, amp: 0.3 };
+        j.setJointValue(c.mid + c.amp * Math.sin(t * (1 + (i % 2)) + i * 0.9));
+      });
+    }
     renderer.render(scene, camera);
     ctx.drawImage(renderer.domElement, (k % cols) * cw, Math.floor(k / cols) * ch, cw, ch);
     await new Promise(r => setTimeout(r, 0));
