@@ -35,7 +35,15 @@
   .foot { margin-top:22px; font-size:11px; color:var(--ink3); line-height:1.6; }
   .foot a { color:var(--ink2); }
   #err { position:absolute; inset:0; display:none; place-items:center; padding:24px; text-align:center; font-size:13px; color:var(--ink2); }
-  @media (max-width:800px) { #app { grid-template-columns:1fr; grid-template-rows:60vh 1fr; } #stage { border-right:0; border-bottom:1px solid var(--line); } #panel { padding-top:20px; } }
+  @media (max-width:800px) {
+    #app { grid-template-columns:1fr; grid-template-rows:60vh 1fr; }
+    #stage { border-right:0; border-bottom:1px solid var(--line); }
+    #panel { padding-top:20px; }
+    /* embed has no panel — without this the hidden panel's 60vh row split
+       still applies and the canvas only fills the top of the iframe */
+    body.embed #app { grid-template-rows:1fr; }
+    body.embed #stage { border-bottom:0; }
+  }
   @media (max-width:640px) {
     #bar { gap:10px; padding:10px 12px; font-size:10px; }
     #cfg { display:none; }                    /* joint readout overflows a phone bar */
