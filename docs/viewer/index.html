@@ -36,6 +36,12 @@
   .foot a { color:var(--ink2); }
   #err { position:absolute; inset:0; display:none; place-items:center; padding:24px; text-align:center; font-size:13px; color:var(--ink2); }
   @media (max-width:800px) { #app { grid-template-columns:1fr; grid-template-rows:60vh 1fr; } #stage { border-right:0; border-bottom:1px solid var(--line); } #panel { padding-top:20px; } }
+  @media (max-width:640px) {
+    #bar { gap:10px; padding:10px 12px; font-size:10px; }
+    #cfg { display:none; }                    /* joint readout overflows a phone bar */
+    #bar .kit { margin-right:0; }
+    #hint { left:12px; right:12px; bottom:10px; font-size:9.5px; letter-spacing:.1em; }
+  }
 </style>
 <script type="importmap">
 { "imports": {
@@ -129,6 +135,11 @@ controls.addEventListener('change', invalidate);
 controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
 controls.touches = { ONE: null, TWO: THREE.TOUCH.DOLLY_ROTATE };
 controls.update();
+/* OrbitControls sets touch-action:none, which turns the whole canvas into a
+   scroll trap on phones (especially as an iframe on hardware.html). pan-y gives
+   one-finger vertical scrolling back to the page; the touchstart router below
+   claims the gesture only when it actually starts on the robot (or two fingers). */
+renderer.domElement.style.touchAction = 'pan-y';
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xdadad6, 0.12));
 // three-point studio rig so metals and edges read even where the environment is weak
@@ -278,6 +289,14 @@ function installIKDrag() {
   const linkOf = (obj) => { let o = obj; while (o && !o.isURDFLink) o = o.parent; return o; };
   // the single-joint controller listens to mousedown and has no enable gate: let it see the click only with Shift
   el.addEventListener('mousedown', (e) => { if (e.button === 0 && !e.shiftKey) e.stopImmediatePropagation(); }, true);
+  // touch routing (needs a non-passive listener): preventDefault keeps the
+  // gesture for pointer events; without it the browser scrolls instead.
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length >= 2) { e.preventDefault(); return; }   // two fingers → orbit / zoom
+    if (!robot) return;
+    toNDC(e.touches[0]);
+    if (ray.intersectObject(robot, true).length) e.preventDefault();  // on the arm → drag it
+  }, { passive: false });
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || e.shiftKey || !robot) return;
     toNDC(e); const hits = ray.intersectObject(robot, true); if (!hits.length) return;
@@ -365,6 +384,8 @@ function resize() {
   renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 addEventListener('resize', () => { resize(); invalidate(); }); resize();
+if (matchMedia('(pointer: coarse)').matches)
+  document.getElementById('hint').textContent = 'Touch the arm — it follows · two fingers: orbit / zoom · double-tap: reset';
 function tick(now) {
   requestAnimationFrame(tick);
   if (robot && (sweeping || params.has('sweep'))) {
